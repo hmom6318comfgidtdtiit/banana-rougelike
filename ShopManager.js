@@ -82,10 +82,11 @@ class ShopManager {
     } else if (item.type === 'HAND_UPGRADE') {
       this.runManager.upgradeHand(item.handTypeKey);
     } else if (item.type === 'BOOSTER_PACK') {
-      // Add extra high cards to deck
-      const newCard1 = new Card(RANKS[12], SUITS.SPADES, `boost_${Date.now()}_1`);
-      const newCard2 = new Card(RANKS[11], SUITS.HEARTS, `boost_${Date.now()}_2`);
-      const newCard3 = new Card(RANKS[12], SUITS.DIAMONDS, `boost_${Date.now()}_3`);
+      // Add extra high cards to deck with guaranteed unique IDs
+      const uid = Math.random().toString(36).substring(2, 9);
+      const newCard1 = new Card(RANKS[12], SUITS.SPADES, `boost_${Date.now()}_${uid}_1`);
+      const newCard2 = new Card(RANKS[11], SUITS.HEARTS, `boost_${Date.now()}_${uid}_2`);
+      const newCard3 = new Card(RANKS[12], SUITS.DIAMONDS, `boost_${Date.now()}_${uid}_3`);
       deck.cards.push(newCard1, newCard2, newCard3);
     }
 

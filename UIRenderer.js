@@ -292,6 +292,18 @@ class UIRenderer {
   renderMemeShop(ctx, mouse) {
     this.clearButtons();
     const rm = this.runManager;
+
+    // Render owned meme cards with Sell buttons in the shop
+    this.modifierEngine.memeSlots.forEach((meme, idx) => {
+      const sellVal = Math.max(1, Math.floor((meme.cost || 5) / 2));
+      this.addButton(`SELL_MEME_${idx}`, meme.x, meme.y + 75, 80, 24, `SELL $${sellVal}`, () => {
+        this.modifierEngine.sellMeme(idx, rm);
+        if (this.particleSystem) {
+          this.particleSystem.spawnSparks(meme.x, meme.y, '#facc15', 15);
+        }
+      }, '#ef4444');
+    });
+
     this.label(ctx, '🛒 MEME SHOP 🛒', 640, 168, 46, '#facc15');
     const r = rm.lastReward;
     if (r) {
