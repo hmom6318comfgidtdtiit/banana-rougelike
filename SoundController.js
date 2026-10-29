@@ -6,6 +6,7 @@ class SoundController {
   constructor() {
     this.ctx = null;
     this.muted = false;
+    this.volume = 0.5; // normalized 0.0 - 1.0 (default 0.5)
     this.masterGain = null;
   }
 
@@ -15,7 +16,8 @@ class SoundController {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AudioCtx();
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      const effectiveGain = this.muted ? 0 : this.volume * 0.6;
+      this.masterGain.gain.setValueAtTime(effectiveGain, this.ctx.currentTime);
       this.masterGain.connect(this.ctx.destination);
     } catch (e) {
       console.warn('Web Audio API not supported', e);
@@ -29,10 +31,19 @@ class SoundController {
     }
   }
 
+  setVolume(val) {
+    this.volume = Math.max(0, Math.min(1, val));
+    if (this.masterGain && this.ctx) {
+      const effectiveGain = this.muted ? 0 : this.volume * 0.6;
+      this.masterGain.gain.setValueAtTime(effectiveGain, this.ctx.currentTime);
+    }
+  }
+
   toggleMute() {
     this.muted = !this.muted;
-    if (this.masterGain) {
-      this.masterGain.gain.setValueAtTime(this.muted ? 0 : 0.3, this.ctx.currentTime);
+    if (this.masterGain && this.ctx) {
+      const effectiveGain = this.muted ? 0 : this.volume * 0.6;
+      this.masterGain.gain.setValueAtTime(effectiveGain, this.ctx.currentTime);
     }
     return this.muted;
   }
