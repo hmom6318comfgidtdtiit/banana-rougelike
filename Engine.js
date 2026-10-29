@@ -45,10 +45,10 @@ class Engine {
   initCanvas() {
     const resize = () => {
       const container = this.canvas.parentElement;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
+      const w = container ? container.clientWidth : window.innerWidth;
+      const h = container ? container.clientHeight : window.innerHeight;
 
-      // Maintain aspect ratio 16:9
+      // Maintain aspect ratio 16:9 while maximizing full screen coverage
       let canvasW = w;
       let canvasH = w * (9 / 16);
 
@@ -70,6 +70,7 @@ class Engine {
     };
 
     window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', () => setTimeout(resize, 100));
     resize();
   }
 
@@ -126,6 +127,11 @@ class Engine {
 
     this.canvas.addEventListener('touchend', () => {
       this.mouse.isDown = false;
+    });
+
+    window.addEventListener('blur', () => {
+      this.mouse.isDown = false;
+      this.mouse.clicked = false;
     });
   }
 

@@ -5,7 +5,7 @@
 class ModifierEngine {
   constructor() {
     this.memeSlots = [];
-    this.maxSlots = 5;
+    this.maxSlots = 6;
     this.availableMemes = [];
     this.initMemeCatalog();
   }
@@ -252,11 +252,24 @@ class ModifierEngine {
     }
   }
 
+  sellMeme(index, runManager) {
+    if (index < 0 || index >= this.memeSlots.length) return false;
+    const meme = this.memeSlots[index];
+    const sellValue = Math.max(1, Math.floor((meme.cost || 5) / 2));
+    this.removeMeme(index);
+    if (runManager) {
+      runManager.money += sellValue;
+      if (runManager.stats) runManager.stats.moneyEarned += sellValue;
+    }
+    if (window.soundController) window.soundController.playCash();
+    return sellValue;
+  }
+
   updateSlotPositions() {
     const count = this.memeSlots.length;
-    const startX = 640 - ((count - 1) * 110) / 2;
+    const startX = 640 - ((count - 1) * 105) / 2;
     this.memeSlots.forEach((meme, idx) => {
-      meme.targetX = startX + idx * 110;
+      meme.targetX = startX + idx * 105;
       meme.targetY = 70;
     });
   }
@@ -295,10 +308,10 @@ class ModifierEngine {
   }
 
   render(ctx) {
-    // Render slot outlines up to 5
-    const startX = 640 - (4 * 110) / 2;
+    // Render slot outlines up to maxSlots (6)
+    const startX = 640 - ((this.maxSlots - 1) * 105) / 2;
     for (let i = 0; i < this.maxSlots; i++) {
-      const slotX = startX + i * 110;
+      const slotX = startX + i * 105;
       const slotY = 70;
 
       ctx.save();
