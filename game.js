@@ -209,6 +209,9 @@ class Game {
     if (currentState === GameState.MAIN_MENU) {
       this.uiRenderer.renderMainMenu(ctx, mouse);
 
+    } else if (currentState === GameState.SETTINGS) {
+      this.uiRenderer.renderSettings(ctx, mouse);
+
     } else if (currentState === GameState.ACTIVE_ROUND) {
       this.deck.render(ctx);
       this.uiRenderer.renderActiveRound(ctx, mouse, this.scoringState);

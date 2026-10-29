@@ -16,16 +16,24 @@ class UIRenderer {
       new Card(RANKS[11], SUITS.HEARTS, 'menu_k'),
       new Card(RANKS[12], SUITS.DIAMONDS, 'menu_a2')
     ];
+
+    // Settings slider state
+    this.isDraggingVolume = false;
+    this.volumeSliderBounds = { x: 440, y: 250, w: 400, h: 20 };
   }
+
   clearButtons() { this.buttons = []; }
+
   addButton(id, x, y, width, height, text, onClick, color = '#eab308') {
     this.buttons.push({ id, x, y, width, height, text, onClick, color });
   }
+
   isOverButton(mouse) {
     return this.buttons.some(b =>
       mouse.x >= b.x - b.width / 2 && mouse.x <= b.x + b.width / 2 &&
       mouse.y >= b.y - b.height / 2 && mouse.y <= b.y + b.height / 2);
   }
+
   handleMouseClick(mouse) {
     for (let btn of this.buttons) {
       const hw = btn.width / 2;
@@ -38,6 +46,7 @@ class UIRenderer {
     }
     return false;
   }
+
   renderButton(ctx, btn, mouse) {
     const hw = btn.width / 2;
     const hh = btn.height / 2;
@@ -83,6 +92,7 @@ class UIRenderer {
     ctx.stroke();
     ctx.restore();
   }
+
   label(ctx, str, x, y, size, color, align = 'center', font = this.fontD) {
     ctx.save();
     ctx.font = `900 ${size}px ${font}`;
@@ -96,6 +106,7 @@ class UIRenderer {
     ctx.fillText(str, x, y);
     ctx.restore();
   }
+
   wrapLines(ctx, text, maxW) {
     const lines = [];
     let line = '';
@@ -106,6 +117,7 @@ class UIRenderer {
     if (line) lines.push(line);
     return lines;
   }
+
   renderMemeTooltip(ctx) {
     const m = this.modifierEngine.memeSlots.find(s => s.isHovered);
     if (!m) return;
@@ -128,6 +140,7 @@ class UIRenderer {
     lines.forEach((l, i) => ctx.fillText(l, x + w / 2, y + 66 + i * 19));
     ctx.restore();
   }
+
   stat(ctx, x, y, w, h, title, value, color) {
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
@@ -161,7 +174,8 @@ class UIRenderer {
     ctx.fillStyle = '#94a3b8';
     ctx.font = '600 16px Outfit, sans-serif';
     ctx.fillText('Break math engines using illegal internet memes.', 640, 350);
-    this.addButton('PLAY', 640, 470, 240, 60, 'START RUN', () => {
+
+    this.addButton('PLAY', 510, 470, 220, 60, 'START RUN', () => {
       this.runManager = new RunManager();
       this.displayScore = 0;
       this.deck.reset();
@@ -170,6 +184,11 @@ class UIRenderer {
       this.modifierEngine.addMeme('stonks');
       this.engine.stateManager.setState(GameState.ACTIVE_ROUND);
     }, '#facc15');
+
+    this.addButton('SETTINGS', 770, 470, 220, 60, 'SETTINGS ⚙️', () => {
+      this.engine.stateManager.setState(GameState.SETTINGS);
+    }, '#38bdf8');
+
     this.buttons.forEach(btn => this.renderButton(ctx, btn, mouse));
 
     // Floating card fan
@@ -186,6 +205,118 @@ class UIRenderer {
     if (best) {
       this.label(ctx, `BEST RUN: ANTE ${best.ante} · BEST HAND ${best.bestHand.toLocaleString()}`, 640, 540, 16, '#a78bfa', 'center', this.fontB);
     }
+    ctx.restore();
+  }
+
+  // ---------- SETTINGS MENU ----------
+  updateSettingsInput(mouse) {
+    const sb = this.volumeSliderBounds;
+    const sound = window.soundController;
+
+    if (mouse.isDown) {
+      // Check if mouse clicked or dragging on slider track/handle
+      if (mouse.clicked) {
+        if (mouse.x >= sb.x - 20 && mouse.x <= sb.x + sb.w + 20 &&
+            mouse.y >= sb.y - 25 && mouse.y <= sb.y + sb.h + 25) {
+          this.isDraggingVolume = true;
+        }
+      }
+
+      if (this.isDraggingVolume && sound) {
+        const relX = Math.max(0, Math.min(sb.w, mouse.x - sb.x));
+        const newVol = relX / sb.w;
+        sound.setVolume(newVol);
+      }
+    } else {
+      this.isDraggingVolume = false;
+    }
+  }
+
+  renderSettings(ctx, mouse) {
+    this.clearButtons();
+    this.updateSettingsInput(mouse);
+
+    ctx.save();
+    this.label(ctx, '⚙️ SETTINGS ⚙️', 640, 100, 52, '#facc15');
+
+    // Panel for settings container
+    this.panel(ctx, 240, 150, 800, 460, '#38bdf8', 20);
+
+    const sound = window.soundController;
+    const vol = sound ? sound.volume : 0.5;
+
+    // --- Volume Control Section ---
+    this.label(ctx, 'MASTER VOLUME', 640, 195, 22, '#38bdf8', 'center', this.fontB);
+
+    const sb = this.volumeSliderBounds;
+    // Track background
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.roundRect(sb.x, sb.y, sb.w, sb.h, 10);
+    ctx.fill();
+
+    // Track fill
+    const fillW = sb.w * vol;
+    if (fillW > 0) {
+      const volGrad = ctx.createLinearGradient(sb.x, 0, sb.x + sb.w, 0);
+      volGrad.addColorStop(0, '#38bdf8');
+      volGrad.addColorStop(1, '#facc15');
+      ctx.fillStyle = volGrad;
+      ctx.beginPath();
+      ctx.roundRect(sb.x, sb.y, fillW, sb.h, 10);
+      ctx.fill();
+    }
+
+    // Handle
+    const handleX = sb.x + fillW;
+    const handleY = sb.y + sb.h / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(handleX, handleY, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Percentage Label
+    const pctStr = `${Math.round(vol * 100)}%`;
+    this.label(ctx, pctStr, sb.x + sb.w + 55, sb.y + sb.h / 2, 22, '#ffffff', 'left', this.fontB);
+
+    // --- Background Selection Section ---
+    this.label(ctx, 'SELECT BACKGROUND THEME', 640, 320, 22, '#38bdf8', 'center', this.fontB);
+
+    const bgShader = this.engine.bgShader;
+    const themes = bgShader ? bgShader.themes : [];
+    const currentTheme = bgShader ? bgShader.currentTheme : 0;
+
+    // 2 rows x 3 columns grid for 6 themes
+    const cardW = 210;
+    const cardH = 75;
+    const gapX = 30;
+    const gapY = 20;
+
+    themes.forEach((t, idx) => {
+      const col = idx % 3;
+      const row = Math.floor(idx / 3);
+
+      const cx = 640 + (col - 1) * (cardW + gapX);
+      const cy = 385 + row * (cardH + gapY);
+
+      const isSelected = currentTheme === t.id;
+
+      this.addButton(`BG_THEME_${t.id}`, cx, cy, cardW, cardH, `${isSelected ? '✓ ' : ''}${t.name}`, () => {
+        if (bgShader) {
+          bgShader.setBackground(t.id);
+        }
+      }, isSelected ? '#22c55e' : '#64748b');
+    });
+
+    // Back to Menu Button
+    this.addButton('BACK_TO_MENU', 640, 560, 220, 50, 'BACK TO MENU', () => {
+      this.engine.stateManager.setState(GameState.MAIN_MENU);
+    }, '#facc15');
+
+    this.buttons.forEach(btn => this.renderButton(ctx, btn, mouse));
     ctx.restore();
   }
 
